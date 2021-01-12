@@ -1,9 +1,11 @@
 import os, warnings
 import xypath
 import xypath.loader
+from xypath.contrib.excel import excel_location
 import databaker.constants
 from databaker.constants import *      # also brings in template
 import databaker.overrides as overrides       # warning: injects additional class functions into xypath and messytables
+from openpyxl import load_workbook
 
 # core classes and functionality
 from databaker.jupybakeutils import HDim, HDimConst, ConversionSegment, Ldatetimeunitloose, Ldatetimeunitforce, pdguessforceTIMEUNIT
@@ -32,6 +34,23 @@ def loadxlstabs(inputfile, sheetids="*", verbose=True):
         assert len(sheetids) == len(tabnames), ("Number of selected tables disagree", "len(sheetids) == len(tabnames)", len(sheetids), len(tabnames))
     if len(set(tabnames)) != len(tabnames):
         warnings.warn("Duplicates found in table names list")
+        
+    # Horrid monkeypatch to fix bold getter for xlsx files
+    def bold():
+        return True
+    def notbold():
+        return False
+    if inputfile.endswith("xlsx"):
+        wb = load_workbook(filename = inputfile) # reload source via openpyxl
+        for tab in tabs:
+            opxl_sheet = wb[tab.name]
+            for xycell in tab:
+                # If openpyexcel says its bold - overrwrite messytables ExcelProperties (.properties here)
+                is_bold = opxl_sheet[excel_location(xycell)].font.bold
+                if opxl_sheet[excel_location(xycell)].font.bold:
+                    xycell.properties.get_bold = bold
+                else:
+                    xycell.properties.get_bold = notbold
     return tabs
 
 DATABAKER_INPUT_FILE = None
