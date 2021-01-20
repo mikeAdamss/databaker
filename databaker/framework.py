@@ -9,6 +9,7 @@ import databaker.overrides as overrides       # warning: injects additional clas
 from databaker.jupybakeutils import HDim, HDimConst, ConversionSegment, Ldatetimeunitloose, Ldatetimeunitforce, pdguessforceTIMEUNIT
 from databaker.jupybakecsv import writetechnicalCSV, readtechnicalCSV
 from databaker.jupybakehtml import savepreviewhtml
+from databaker.tableset import GSSExcelTableSet
 
 # this lot should be deprecated
 from databaker.jupybakecsv import headersfromwdasegment, extraheaderscheck, checktheconstantdimensions, checksegmentobsvalues
@@ -17,8 +18,19 @@ from databaker.jupybakecsv import wdamsgstrings, CompareConversionSegments
 def loadxlstabs(inputfile, sheetids="*", verbose=True):
     if verbose:
         print("Loading %s which has size %d bytes" % (inputfile, os.path.getsize(inputfile)))
-    tableset = xypath.loader.table_set(inputfile, extension='xls')
-    tabs = list(xypath.loader.get_sheets(tableset, sheetids))
+    
+    # NOTE - for spike:
+    # I ..think... these are the rows we need to update with our
+    # own excel loader.
+    # hopefully just these but it'll depend on how interdepdnent they
+    # are with other parts of messy tables
+    
+    # OLD LINE: tableset = xypath.loader.table_set(inputfile, extension='xls')
+    tableset = GSSExcelTableSet(filename=inputfile)
+
+    # OLD LINE tabs = list(xypath.loader.get_sheets(tableset, sheetids))
+    # TODO -new line
+
     tabnames = [ tab.name  for tab in tabs ]
     if verbose:
         print("Table names: %s" % str(tabnames))
