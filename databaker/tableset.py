@@ -52,11 +52,11 @@ class GSSExcelTableSet(TableSet):
 
     def make_tables(self):
         """ Return the sheets in the workbook. """
-        return [GSSTableRowSet(name, self.workbook[name], self.window)
+        return [GSSExcelRowSet(name, self.workbook[name], self.window)
                 for name in self.workbook.sheetnames]
 
 
-class GSSTableRowSet(RowSet):
+class GSSExcelRowSet(RowSet):
     """ Excel support for a single sheet in the excel workbook. Unlike
     the CSV row set this is not a streaming operation. """
 
@@ -64,19 +64,19 @@ class GSSTableRowSet(RowSet):
         self.name = name
         self.sheet = sheet
         self.window = window or 1000
-        super(GSSTableRowSet, self).__init__(typed=True)
+        super(GSSExcelRowSet, self).__init__(typed=True)
 
     def raw(self, sample=False):
         for row_no, row in enumerate(self.sheet.iter_rows()):
             row_of_cells = []
             for col_no, openpyexcel_cell in enumerate(row):
                 row_of_cells.append(
-                    XLSCell.from_openpyexcel(openpyexcel_cell,
+                    ExcelCell.from_openpyexcel(openpyexcel_cell,
                             self.sheet, col_no, row_no))
             yield row_of_cells
 
 
-class XLSCell(Cell):
+class ExcelCell(Cell):
 
     @staticmethod
     def from_openpyexcel(openpyexcel_cell, sheet, col, row):
@@ -88,10 +88,10 @@ class XLSCell(Cell):
             # TODO - possible? not sure we care
             pass
 
-        messy_cell = XLSCell(value, type=cell_type)
+        messy_cell = ExcelCell(value, type=cell_type)
         messy_cell.sheet = sheet
-        messy_cell.xlrd_cell = openpyexcel_cell  # hmmmmmmmmm
-        messy_cell.xlrd_pos = (row, col)
+        messy_cell.openpyexcel_cell = openpyexcel_cell
+        messy_cell.xlrd_pos = (row, col)  # ??? what is this?
         return messy_cell
 
     # @property
@@ -103,16 +103,21 @@ class XLSCell(Cell):
         return GSSXLSProperties(self)
 
 class GSSXLSProperties(CoreProperties):
-    #KEYS = ['bold', 'size', 'italic', 'font_name', 'strikeout', 'underline',
-    #        'font_colour', 'background_colour', 'any_border', 'all_border',
-    #        'richtext', 'blank', 'a_date', 'formatting_string']
+    
+    # TODO!
+    # These following all accessed via the accompanying methods in this class
+    # we need to reimplement them (or as many as databaker uses) without
+    # using the xlrd library
+    KEYS = ['bold', 'size', 'italic', 'font_name', 'strikeout', 'underline',
+            'font_colour', 'background_colour', 'any_border', 'all_border',
+            'richtext', 'blank', 'a_date', 'formatting_string']
     
     def __init__(self, cell):
         self.cell = cell
         self.merged = {}
 
     def get_bold(self):
-        return self.cell.font.bold  # the openpyexcel way of expressing bold
+        return self.cell.openpyexcel_cell.font.bold  # the openpyexcel way of expressing bold
 
     # @property
     #def xf(self):

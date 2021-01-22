@@ -19,17 +19,10 @@ def loadxlstabs(inputfile, sheetids="*", verbose=True):
     if verbose:
         print("Loading %s which has size %d bytes" % (inputfile, os.path.getsize(inputfile)))
     
-    # NOTE - for spike:
-    # I ..think... these are the rows we need to update with our
-    # own excel loader.
-    # hopefully just these but it'll depend on how interdepdnent they
-    # are with other parts of messy tables
-    
     # OLD LINE: tableset = xypath.loader.table_set(inputfile, extension='xls')
     tableset = GSSExcelTableSet(filename=inputfile)
 
-    # OLD LINE tabs = list(xypath.loader.get_sheets(tableset, sheetids))
-    # TODO -new line
+    tabs = list(xypath.loader.get_sheets(tableset, sheetids))
 
     tabnames = [ tab.name  for tab in tabs ]
     if verbose:
