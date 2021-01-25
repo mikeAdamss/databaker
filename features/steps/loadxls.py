@@ -18,26 +18,9 @@ def step_impl(context, xls_file):
     context.last_xls_loaded = path_to_xls
     context.tabs = loadxlstabs(path_to_xls)
 
-@given('get "{thing_wanted}" from the transform')
-def step_impl(context, thing_wanted):
-
-    transform_code = context.text
-
-    # Nasty, but needs must
-    here = Path(os.path.dirname(os.path.abspath(__file__))).parent
-    with open(Path(here / "temp_transform.py"), "w") as f:
-        f.write("from databaker.framework import *\n\n")
-
-        # Need to split this and crowbar in our xls load
-        transform_lines = transform_code.split("\n")
-        f.write(transform_lines[0]+"\n")
-        f.write('    tabs = loadxlstabs("{}")'.format(context.last_xls_loaded)+"\n")
-        for line in transform_lines[1:]:
-            f.write(line+"\n")
-
-    from temp_transform import transform_xlsx
-    returned_from_transform = transform_xlsx()
-    context.databaker_outputs = {thing_wanted: returned_from_transform}
+@given('select the sheet "{sheet_wanted}"')
+def step_impl(context, sheet_wanted):
+    context.tab_selected = [x for x in context.tabs if x.name == sheet_wanted][0]
 
 @then(u'the output "{thing_wanted}" should be equal to')
 def step_impl(context, thing_wanted):

@@ -24,48 +24,36 @@ def get_fixture(file_name):
 
 
 #From the tab, define all dimensions and observations in the usual transform manner.
-@given(u'we define the dimensions and observations:')
+@given(u'we define cell selections as')
 def step_impl(context):
-    #raise NotImplementedError(u'STEP: Given we define the dimensions and observations:')
-    context.tab = context.tabs[0]
+    tab = context.tab_selected
+    context.selections = {}
 
-    context.year = context.tab.excel_ref("A13")
-    context.month = context.tab.excel_ref("B6:B25").is_not_blank()
-    context.day = context.tab.excel_ref("C6:C25")
-    context.top_dims = context.tab.excel_ref("D5:I5")
-    context.over_dim = context.tab.excel_ref("D4")
-    context.bottom_dims = context.tab.excel_ref("D26:I26")
-    context.under_dim = context.tab.excel_ref("D27")
-    context.county = context.tab.excel_ref("J6:J25")
-    context.country = context.tab.excel_ref("K6:K25").is_not_blank()
-    context.unit = context.tab.excel_ref("M13")
-
-    context.observations = context.tab.excel_ref("D6:I25")
-
+    for row in context.table:
+        context.selections[row[0]] = eval(row[1])
 
 #Now we build the dimensions list.
-@given(u'we create a list of dimensions (HDim objects) with their relation to observations.')
+@given(u'we define the dimensions as')
 def step_impl(context):
-    #raise NotImplementedError(u'STEP: Given we create a list of dimensions (HDim objects) with their relation to observations.')
-    context.dimensions = [
-        HDim(context.year, "Year", CLOSEST, LEFT),
-        HDim(context.month, "Month", CLOSEST, ABOVE),
-        HDim(context.day, "Day", DIRECTLY, LEFT),
-        HDim(context.top_dims, "Top Dims", DIRECTLY, ABOVE),
-        HDim(context.over_dim, "Over Dim", CLOSEST, ABOVE),
-        HDim(context.bottom_dims, "Bottom Dims", DIRECTLY, BELOW),
-        HDim(context.under_dim, "Under Dim", CLOSEST, BELOW),
-        HDim(context.county, "County", DIRECTLY, RIGHT),
-        HDim(context.country, "Country", CLOSEST, ABOVE),
-        HDim(context.unit, "Unit", CLOSEST, RIGHT)
-    ]
+    dimension_statments = context.text.split("\n")
+    context.dimensions = []
+    for ds in dimension_statments:
 
+        # Modify the statment to get the selection from context, so
+        # HDim(year, "Year", CLOSEST, LEFT)
+        # becomes
+        # HDim(context.selections["year"], "Year", CLOSEST, LEFT)
+        ds_tokens = ds.split(",")
+        ds0 = ds_tokens[0]
+        ds0 = ds0.split("(")[0]+f'(context.selections[\'{ds0.split("(")[1]}\'],'
+        ds = ds0 + ",".join(ds_tokens[1:])
+        context.dimensions.append(eval(ds))
 
 #We use the list to instanciate a conversion segment object.
 @given(u'we create a ConversionSegment object.')
 def step_impl(context):
     #raise NotImplementedError(u'STEP: Given we create a ConversionSegment object.')
-    context.tidy_sheet = ConversionSegment(context.tab, context.dimensions, context.observations)
+    context.tidy_sheet = ConversionSegment(context.tab_selected, context.dimensions, context.selections["observations"])
 
 
 #The conversion segment object is converted into a dataframe using it's function .topandas()
